@@ -1,5 +1,5 @@
 import Sequelize from 'sequelize'
-import { createClient } from '../config/redis'
+// import { createClient } from '../config/redis'
 
 import User from './User'
 import Token from './OAuthToken'
@@ -20,7 +20,7 @@ export const sequelize = new Sequelize(
 /*
  * connect to the redis wait for the connection then proceed
  */
-createClient()
+// createClient()
 
 export default sequelize
 export const TokenModel = Token(sequelize, Sequelize.DataTypes)

@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/node'
 import * as Tracing from '@sentry/tracing'
 
 import exceptionHander from './middlewares/exception-handler'
-import { createClient } from './config/redis'
+// import { createClient } from './config/redis'
 ;(async function () {
     /**
      * load environment variables from .env
@@ -102,7 +102,7 @@ import { createClient } from './config/redis'
     /**
      * connect to the redis wait for the connection then proceed
      */
-    await createClient()
+    // await createClient()
 
     /**
      * The error handler must be before
