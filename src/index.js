@@ -122,11 +122,11 @@ import exceptionHander from './middlewares/exception-handler'
      */
     const port = process.env.PORT || 3000
 
-    const server = require('./config/socket')(app)
+    // const server = require('./config/socket')(app)
     /**
      * listen to the exposed port
      */
-    server.listen(port, () => {
+    app.listen(port, () => {
         // eslint-disable-next-line
         console.log('App server started on port ' + port)
     })
