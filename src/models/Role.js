@@ -1,8 +1,10 @@
-import { AbstractModel } from './AbstractModel'
+import { AbstractModel } from './AbstractModel';
+
 export default (sequelize, DataTypes) => {
     class Role extends AbstractModel {
         static associate(models) {}
     }
+
     Role.init(
         {
             id: {
@@ -19,13 +21,23 @@ export default (sequelize, DataTypes) => {
                 type: DataTypes.JSON,
                 allowNull: false,
             },
+            createdAt: {
+                type: DataTypes.DATE,
+                allowNull: false,
+                defaultValue: DataTypes.NOW,
+            },
+            updatedAt: {
+                type: DataTypes.DATE,
+                allowNull: false,
+                defaultValue: DataTypes.NOW,
+            },
         },
         {
             sequelize,
             modelName: 'roles',
             timestamps: true,
         }
-    )
+    );
 
-    return Role
-}
+    return Role;
+};

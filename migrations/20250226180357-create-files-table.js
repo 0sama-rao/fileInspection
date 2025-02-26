@@ -21,7 +21,7 @@ module.exports = {
             },
             sessionId: {
                 type: Sequelize.STRING,
-                allowNull: true, // Tracks anonymous users
+                allowNull: true,
             },
             originalName: {
                 type: Sequelize.STRING(255),
@@ -41,11 +41,11 @@ module.exports = {
             },
             fileHash: {
                 type: Sequelize.STRING(64),
-                allowNull: false, // SHA-256 file integrity hash
+                allowNull: false,
             },
             dimensions: {
                 type: Sequelize.JSON,
-                allowNull: true, // Only for images
+                allowNull: true,
             },
             createdAt: {
                 type: Sequelize.DATE,

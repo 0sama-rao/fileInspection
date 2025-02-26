@@ -1,19 +1,18 @@
-import { AbstractModel } from './AbstractModel'
-
-/** import helpers */
-import translate from '../helpers/translate'
+import { AbstractModel } from './AbstractModel';
+import translate from '../helpers/translate';
 
 export default (sequelize, DataTypes) => {
     class User extends AbstractModel {
         static associate(models) {}
     }
+
     User.init(
         {
             id: {
-                type: DataTypes.INTEGER.UNSIGNED,
+                type: DataTypes.UUID,
+                defaultValue: DataTypes.UUIDV4,
                 allowNull: false,
                 primaryKey: true,
-                autoIncrement: true,
             },
             role_id: {
                 type: DataTypes.INTEGER.UNSIGNED,
@@ -27,43 +26,42 @@ export default (sequelize, DataTypes) => {
                     },
                 },
             },
-            role_title: {
-                type: DataTypes.STRING(50),
-                allowNull: false,
-            },
             full_name: {
                 type: DataTypes.STRING(100),
+                allowNull: false,
             },
             email: {
                 type: DataTypes.STRING(100),
+                allowNull: false,
+                unique: true,
             },
             password: {
-                type: DataTypes.STRING(100),
+                type: DataTypes.STRING(255),
+                allowNull: false,
+            },
+            subscription_type: {
+                type: DataTypes.ENUM('free', 'basic', 'premium'),
+                defaultValue: 'free',
+                allowNull: false,
             },
             status: {
                 type: DataTypes.ENUM('pending', 'active', 'blocked'),
                 defaultValue: 'active',
                 allowNull: false,
-                validate: {
-                    isIn: {
-                        args: [['pending', 'active', 'blocked']],
-                        msg: translate('validations', 'valid', {
-                            ':attribute': 'status',
-                        }),
-                    },
-                },
-            },
-            verification_code: {
-                type: DataTypes.STRING(100),
-            },
-            password_token: {
-                type: DataTypes.STRING(100),
             },
             verified_at: {
                 type: DataTypes.DATE,
+                allowNull: true,
             },
-            activated_at: {
+            createdAt: {
                 type: DataTypes.DATE,
+                allowNull: false,
+                defaultValue: DataTypes.NOW,
+            },
+            updatedAt: {
+                type: DataTypes.DATE,
+                allowNull: false,
+                defaultValue: DataTypes.NOW,
             },
         },
         {
@@ -71,7 +69,7 @@ export default (sequelize, DataTypes) => {
             modelName: 'users',
             timestamps: true,
         }
-    )
+    );
 
-    return User
-}
+    return User;
+};

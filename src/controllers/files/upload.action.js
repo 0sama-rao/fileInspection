@@ -1,163 +1,62 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'fs';
+import path from 'path';
+import multer from 'multer';
+import { stat } from 'fs/promises';
+import mime from 'mime-types';
+import crypto from 'crypto';
+import { File } from '../../models'; // Ensure the correct path to your Sequelize model
+import { asyncHandler } from '../../middlewares/exception-handler';
 
-import crypto from 'crypto' // For file hash
-import multer from 'multer'
+const getFileType = async (filePath) => {
+    const fileType = await import('file-type');
+    return fileType.fileTypeFromFile(filePath);
+};
 
-import os from 'os' // For system details
-import sizeOf from 'image-size' // For image dimensions
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadFolder = path.join(__dirname, '../../../storage/uploads');
+        if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder, { recursive: true });
+        cb(null, uploadFolder);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`);
+    }
+});
 
-import config from '../../config/uploads'
-import translate from '../../helpers/translate'
+const upload = multer({ storage }).single('file');
 
-/**
- * Upload file
- * @description This method will upload file and capture metadata.
- * @input data of file to be uploaded
- * @return (Object)
- */
-export const upload = async (request, response) => {
-    const dateNow = Date.now()
-    const storage = multer.diskStorage({
-        destination: (req, file, callback) => {
-            const typeConfig = config[req?.body?.type]
-
-            if (!typeConfig) {
-                return response.status(422).json({
-                    message: translate('validations', 'valid', {
-                        ':attribute': 'Type',
-                    }),
-                })
-            }
-
-            let folder = typeConfig.folder
-            folder =
-                folder && req?.body?.id
-                    ? folder.replace('{id}', req?.body?.id)
-                    : folder
-
-            if (!fs.existsSync(`storage/images/${folder}`)) {
-                fs.mkdirSync(`storage/images/${folder}`, { recursive: true })
-            }
-
-            callback(null, path.join(`./storage/images/${folder}/`))
-        },
-        filename: (req, file, callback) => {
-            const filename = `${file?.fieldname}-${dateNow}${path?.extname(file?.originalname)}`
-            callback(null, filename)
-        },
-    })
-
-    const multipleUpload = multer({ storage }).array('files', 5)
-
-    multipleUpload(request, response, (error) => {
-        if (error) {
-            return response.status(422).json({ message: error.message })
+export const uploadFile = asyncHandler(async (req, res) => {
+    upload(req, res, async (err) => {
+        if (err) {
+            return res.status(422).json({ message: err.message });
         }
+        
+        const file = req.file;
+        if (!file) return res.status(400).json({ message: 'No file uploaded' });
 
-        const typeConfig = config[request?.body?.type]
-        const files = request?.files
+        const filePath = path.join(__dirname, '../../../storage/uploads', file.filename);
+        const fileStats = await stat(filePath);
+        const type = await getFileType(filePath); // ✅ FIXED
 
-        if (!request?.body?.type) {
-            return response.status(422).json({
-                message: translate('validations', 'valid', {
-                    ':attribute': 'Type',
-                }),
-            })
-        }
-        // eslint-disable-next-line no-console
-        console.log(
-            files,
-            'files?.lengthfiles?.lengthfiles?.length',
-            request?.body
-        )
+        const hash = crypto.createHash('sha256');
+        const fileBuffer = fs.readFileSync(filePath);
+        hash.update(fileBuffer);
+        const fileHash = hash.digest('hex');
 
-        if (!files?.length) {
-            return response.status(422).json({
-                message: translate('validations', 'required', {
-                    ':attribute': 'Files',
-                }),
-            })
-        }
+        const metadata = {
+            userId: req?.user?.id || null,
+            sessionId: req?.sessionID || null,
+            originalName: file.originalname,
+            filename: file.filename,
+            size: fileStats.size,
+            mimeType: type ? type.mime : mime.lookup(filePath),
+            fileHash,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
 
-        if (typeConfig?.isIdRequired && !request?.body?.id) {
-            return response.status(422).json({
-                message: translate('validations', 'required', {
-                    ':attribute': 'Id',
-                }),
-            })
-        }
+        const storedFile = await File.create(metadata);
 
-        const data = []
-
-        for (let i = 0; i < files?.length; i++) {
-            const item = files[i]
-            const supportedFileRegex = new RegExp(typeConfig?.fileSupported)
-            const supportedMimeType = new RegExp(typeConfig?.mimeTypeSupported)
-            const fileExt = item?.originalname.split('.').pop()?.toLowerCase()
-
-            if (
-                (fileExt && !supportedFileRegex.test(fileExt)) ||
-                !supportedMimeType.test(item.mimetype)
-            ) {
-                return response.status(422).json({
-                    message: translate('validations', 'valid', {
-                        ':attribute': 'File format',
-                    }),
-                })
-            }
-
-            if (item?.size > typeConfig?.maxSize) {
-                return response.status(422).json({
-                    message: translate('validations', 'fileSize', {
-                        ':size': Math.round(
-                            typeConfig?.maxSize / 1024 / 1024
-                        ).toString(),
-                    }),
-                })
-            }
-
-            // File metadata extraction
-            const fileResponse = {
-                originalName: item?.originalname,
-                fileName: item?.filename,
-                fileURL: `${process.env.API_URL}${item?.path}`,
-                size: item.size,
-                mimeType: item.mimetype,
-                creationDate: new Date().toISOString(),
-                lastModified: fs.statSync(item.path).mtime.toISOString(),
-            }
-            console.log(fileResponse, "response")
-            // Calculate file hash (SHA-256)
-            const hash = crypto.createHash('sha256')
-            const fileBuffer = fs.readFileSync(item.path)
-            hash.update(fileBuffer)
-            fileResponse.fileHash = hash.digest('hex')
-
-            // Get image dimensions for image files
-            if (['png', 'jpeg', 'jpg'].includes(fileExt)) {
-                try {
-                    const dimensions = sizeOf(item.path)
-                    fileResponse.dimensions = dimensions
-                } catch (err) {
-                    // Handle non-image files gracefully
-                    fileResponse.dimensions = null
-                }
-            }
-
-            // Add additional metadata
-            fileResponse.owner = request?.user?.id || 'Unknown' // Assuming user info exists in request
-            fileResponse.computer = os.hostname() // Add computer hostname
-
-            data.push(fileResponse)
-        }
-
-        return response.json({
-            message: translate('messages', 'success', {
-                ':attribute': 'File has',
-                ':action': 'uploaded',
-            }),
-            data,
-        })
-    })
-}
+        res.json({ message: 'File uploaded successfully', file: storedFile });
+    });
+});

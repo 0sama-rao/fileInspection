@@ -11,7 +11,7 @@ module.exports = {
             },
             role_id: {
                 type: Sequelize.INTEGER.UNSIGNED,
-                allowNull: false,
+                allowNull: true,  // ✅ Allow NULL to prevent constraint errors
                 references: {
                     model: 'roles',
                     key: 'id',
