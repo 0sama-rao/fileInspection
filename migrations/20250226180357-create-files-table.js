@@ -1,50 +1,51 @@
 'use strict';
 
 module.exports = {
-    async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('users', {
+    up: async (queryInterface, Sequelize) => {
+        await queryInterface.createTable('files', {
             id: {
                 type: Sequelize.UUID,
                 defaultValue: Sequelize.UUIDV4,
                 allowNull: false,
                 primaryKey: true,
             },
-            role_id: {
-                type: Sequelize.INTEGER.UNSIGNED,
-                allowNull: false,
+            userId: {
+                type: Sequelize.UUID,
+                allowNull: true,
                 references: {
-                    model: 'roles',
+                    model: 'users',
                     key: 'id',
                 },
                 onUpdate: 'CASCADE',
                 onDelete: 'SET NULL',
             },
-            full_name: {
-                type: Sequelize.STRING(100),
-                allowNull: false,
+            sessionId: {
+                type: Sequelize.STRING,
+                allowNull: true, // Tracks anonymous users
             },
-            email: {
-                type: Sequelize.STRING(100),
-                allowNull: false,
-                unique: true,
-            },
-            password: {
+            originalName: {
                 type: Sequelize.STRING(255),
                 allowNull: false,
             },
-            subscription_type: {
-                type: Sequelize.ENUM('free', 'basic', 'premium'),
-                defaultValue: 'free',
+            filename: {
+                type: Sequelize.STRING(255),
                 allowNull: false,
             },
-            status: {
-                type: Sequelize.ENUM('pending', 'active', 'blocked'),
-                defaultValue: 'active',
+            size: {
+                type: Sequelize.BIGINT,
                 allowNull: false,
             },
-            verified_at: {
-                type: Sequelize.DATE,
-                allowNull: true,
+            mimeType: {
+                type: Sequelize.STRING(100),
+                allowNull: false,
+            },
+            fileHash: {
+                type: Sequelize.STRING(64),
+                allowNull: false, // SHA-256 file integrity hash
+            },
+            dimensions: {
+                type: Sequelize.JSON,
+                allowNull: true, // Only for images
             },
             createdAt: {
                 type: Sequelize.DATE,
@@ -59,7 +60,7 @@ module.exports = {
         });
     },
 
-    async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('users');
+    down: async (queryInterface, Sequelize) => {
+        await queryInterface.dropTable('files');
     },
 };

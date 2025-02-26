@@ -127,7 +127,7 @@ export const upload = async (request, response) => {
                 creationDate: new Date().toISOString(),
                 lastModified: fs.statSync(item.path).mtime.toISOString(),
             }
-
+            console.log(fileResponse, "response")
             // Calculate file hash (SHA-256)
             const hash = crypto.createHash('sha256')
             const fileBuffer = fs.readFileSync(item.path)

@@ -24,4 +24,5 @@ if (process.env.MYSQL_DB_LOGGING === false) {
     options.logQueryParameters = true
 }
 
+console.log(options,"-----------options")
 module.exports = options

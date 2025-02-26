@@ -1,6 +1,5 @@
-'use strict'
+'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable('roles', {
@@ -14,22 +13,28 @@ module.exports = {
                 type: Sequelize.STRING(50),
                 allowNull: false,
             },
+            description: {
+                type: Sequelize.STRING(255),
+                allowNull: true, // Optional field
+            },
             scopes: {
                 type: Sequelize.JSON,
                 allowNull: false,
             },
-            created_at: {
+            createdAt: {
                 type: Sequelize.DATE,
                 allowNull: false,
+                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
             },
-            updated_at: {
+            updatedAt: {
                 type: Sequelize.DATE,
                 allowNull: false,
+                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
             },
-        })
+        });
     },
 
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('roles')
+        await queryInterface.dropTable('roles');
     },
-}
+};
