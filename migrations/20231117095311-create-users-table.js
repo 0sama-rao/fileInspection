@@ -20,7 +20,7 @@ module.exports = {
                 onDelete: 'SET NULL',
             },
             full_name: {
-                type: Sequelize.STRING(100),
+            type: Sequelize.STRING(100),
                 allowNull: false,
             },
             email: {

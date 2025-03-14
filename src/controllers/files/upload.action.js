@@ -2,15 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
 import { stat } from 'fs/promises';
+const fileType = await import('file-type');
 import mime from 'mime-types';
 import crypto from 'crypto';
 import { File } from '../../models'; // Ensure the correct path to your Sequelize model
 import { asyncHandler } from '../../middlewares/exception-handler';
-
-const getFileType = async (filePath) => {
-    const fileType = await import('file-type');
-    return fileType.fileTypeFromFile(filePath);
-};
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -36,8 +32,8 @@ export const uploadFile = asyncHandler(async (req, res) => {
 
         const filePath = path.join(__dirname, '../../../storage/uploads', file.filename);
         const fileStats = await stat(filePath);
-        const type = await getFileType(filePath); // ✅ FIXED
-
+        const type = await fileType.fromFile(filePath);
+        
         const hash = crypto.createHash('sha256');
         const fileBuffer = fs.readFileSync(filePath);
         hash.update(fileBuffer);
